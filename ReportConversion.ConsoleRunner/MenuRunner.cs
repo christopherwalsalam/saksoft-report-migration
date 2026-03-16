@@ -110,8 +110,8 @@ public static class MenuRunner
 
     private static async Task GroupByKpiAsync(IServiceProvider services)
     {
-        PrintHeader("3. Group Reports by KPI (Azure OpenAI)");
-        Log.Information("Sending report metadata to Azure OpenAI for KPI classification...");
+        PrintHeader("3. Group Reports by KPI (SQL Analysis via Azure OpenAI)");
+        Log.Information("Analysing report SQL queries and discovering KPI groups via Azure OpenAI...");
 
         using var scope = services.CreateScope();
         var svc = scope.ServiceProvider.GetRequiredService<KpiGroupingService>();
@@ -119,7 +119,7 @@ public static class MenuRunner
         try
         {
             var result = await svc.GroupReportsByKpiAsync();
-            PrintSuccess($"KPI grouping complete. Grouped: {result.GroupedCount}, Failed: {result.FailedCount}");
+            PrintSuccess($"KPI grouping complete. Groups discovered: {result.GroupsDiscovered}, Reports grouped: {result.ReportsGrouped}, Without SQL: {result.ReportsWithoutSql}, Failed: {result.FailedCount}");
         }
         catch (Exception ex)
         {
@@ -245,7 +245,7 @@ public static class MenuRunner
         Console.ResetColor();
         Console.WriteLine("  [1]  Extract SAP BO Metadata");
         Console.WriteLine("  [2]  Identify Stale / Unused Reports");
-        Console.WriteLine("  [3]  Group Reports by KPI (Azure OpenAI)");
+        Console.WriteLine("  [3]  Group Reports by KPI (SQL Analysis via Azure OpenAI)");
         Console.WriteLine("  [4]  Find Duplicate Reports (Embeddings)");
         Console.WriteLine("  [5]  Migrate Reports to Power BI");
         Console.WriteLine("  [6]  View Migration Summary");

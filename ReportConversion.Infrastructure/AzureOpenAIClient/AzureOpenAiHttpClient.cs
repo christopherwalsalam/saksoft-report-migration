@@ -3,7 +3,9 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ReportConversion.Application.Interfaces;
+using ReportConversion.Application.Models;
 using ReportConversion.Application.Settings;
+using System.Text;
 using System.Text.Json;
 
 namespace ReportConversion.Infrastructure.AzureOpenAIClient;
@@ -88,6 +90,162 @@ public class AzureOpenAiHttpClient : IAzureOpenAiClient
         {
             _logger.LogError(ex, "Failed to get KPI group batch from Azure OpenAI");
             return new Dictionary<string, string>();
+        }
+    }
+
+    /// <summary>
+    /// Sends SQL summaries for a batch of reports to GPT-4o and asks it to discover
+    /// emergent KPI groups purely from the SQL technical patterns.
+    /// No predefined category list is used — the LLM invents group names based on
+    /// what the SQL actually measures (tables, columns, aggregations, joins).
+    /// </summary>
+    public async Task<List<SqlKpiGroup>> DiscoverKpiGroupsFromSqlAsync(
+        List<(int ReportId, string SqlSummary)> reports)
+    {
+        if (!reports.Any()) return new List<SqlKpiGroup>();
+
+        var prompt = BuildSqlGroupingPrompt(reports);
+
+        var options = new ChatCompletionsOptions
+        {
+            DeploymentName = _settings.ChatDeploymentName,
+            Messages =
+            {
+                new ChatRequestSystemMessage("""
+                    You are a senior data architect analysing SQL queries from a legacy SAP BusinessObjects environment.
+
+                    Your task is to identify which reports measure the same or closely related KPIs by examining:
+                    - The database tables they reference
+                    - The columns they SELECT, GROUP BY, or filter on
+                    - The aggregation functions used (SUM, COUNT, AVG, etc.)
+                    - The join patterns between tables
+                    - The filter conditions applied
+
+                    Group reports that share the same core business measurement (e.g. all reports that
+                    aggregate revenue by date from similar tables, or all reports measuring headcount
+                    from HR tables). The group names must be derived from the SQL content — do NOT use
+                    generic labels like "Financial Performance". Instead use specific names like
+                    "Monthly Revenue by Customer Segment" or "Headcount Variance by Department".
+
+                    Respond ONLY with valid JSON in this exact shape:
+                    {
+                      "groups": [
+                        {
+                          "name": "<specific KPI name derived from SQL patterns>",
+                          "description": "<technical description: which tables/columns define this KPI>",
+                          "reportIds": [<integer>, ...]
+                        }
+                      ]
+                    }
+
+                    Every report ID in the input must appear in exactly one group.
+                    Use "Ungrouped / No SQL Pattern Match" for reports whose SQL does not clearly
+                    indicate a shared KPI with any other report.
+                    """),
+                new ChatRequestUserMessage(prompt)
+            },
+            MaxTokens = 4000,
+            Temperature = 0.1f,
+            ResponseFormat = ChatCompletionsResponseFormat.JsonObject
+        };
+
+        try
+        {
+            var response = await _client.GetChatCompletionsAsync(options);
+            var content = response.Value.Choices[0].Message.Content ?? "{}";
+            return ParseSqlGroupingResponse(content, reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DiscoverKpiGroupsFromSqlAsync failed — returning empty list");
+            return new List<SqlKpiGroup>();
+        }
+    }
+
+    private static string BuildSqlGroupingPrompt(List<(int ReportId, string SqlSummary)> reports)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Analyse the following report SQL summaries and group them by the KPI they measure:\n");
+
+        foreach (var (id, summary) in reports)
+        {
+            sb.AppendLine($"--- Report ID: {id} ---");
+            sb.AppendLine(summary);
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    private List<SqlKpiGroup> ParseSqlGroupingResponse(
+        string json,
+        List<(int ReportId, string SqlSummary)> inputReports)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("groups", out var groupsElement))
+            {
+                _logger.LogWarning("LLM response missing 'groups' property");
+                return new List<SqlKpiGroup>();
+            }
+
+            var result = new List<SqlKpiGroup>();
+            var assignedIds = new HashSet<int>();
+
+            foreach (var groupEl in groupsElement.EnumerateArray())
+            {
+                var name = groupEl.TryGetProperty("name", out var n) ? n.GetString() ?? "Unknown" : "Unknown";
+                var description = groupEl.TryGetProperty("description", out var d) ? d.GetString() ?? "" : "";
+
+                var reportIds = new List<int>();
+                if (groupEl.TryGetProperty("reportIds", out var idsEl))
+                {
+                    foreach (var idEl in idsEl.EnumerateArray())
+                    {
+                        if (idEl.TryGetInt32(out int rid))
+                        {
+                            reportIds.Add(rid);
+                            assignedIds.Add(rid);
+                        }
+                    }
+                }
+
+                if (reportIds.Any())
+                {
+                    result.Add(new SqlKpiGroup
+                    {
+                        Name = name,
+                        Description = description,
+                        ReportIds = reportIds
+                    });
+                }
+            }
+
+            // Safety net: any report not assigned by LLM goes into a catch-all group
+            var unassigned = inputReports
+                .Select(r => r.ReportId)
+                .Where(id => !assignedIds.Contains(id))
+                .ToList();
+
+            if (unassigned.Any())
+            {
+                result.Add(new SqlKpiGroup
+                {
+                    Name = "Ungrouped / No SQL Pattern Match",
+                    Description = "Reports whose SQL did not clearly match any discovered KPI group.",
+                    ReportIds = unassigned
+                });
+            }
+
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to parse LLM grouping response");
+            return new List<SqlKpiGroup>();
         }
     }
 
