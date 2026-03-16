@@ -9,6 +9,14 @@ public class SqlKpiGroup
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// LLM-generated explanation of WHY these specific reports are grouped together —
+    /// citing the concrete SQL evidence (shared tables, identical aggregation columns,
+    /// common join patterns, matching filter fields, etc.).
+    /// </summary>
+    public string Reason { get; set; } = string.Empty;
+
     public List<int> ReportIds { get; set; } = new();
 }
 

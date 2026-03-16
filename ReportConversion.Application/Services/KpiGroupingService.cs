@@ -27,6 +27,7 @@ public class KpiGroupingService
     private readonly IReportSqlRepository _sqlRepository;
     private readonly IKpiGroupRepository _kpiGroupRepository;
     private readonly IReportSqlAnalysisRepository _sqlAnalysisRepository;
+    private readonly IReportKpiGroupMappingRepository _mappingRepository;
     private readonly ILogger<KpiGroupingService> _logger;
 
     // Maximum reports sent to the LLM in a single grouping call.
@@ -40,6 +41,7 @@ public class KpiGroupingService
         IReportSqlRepository sqlRepository,
         IKpiGroupRepository kpiGroupRepository,
         IReportSqlAnalysisRepository sqlAnalysisRepository,
+        IReportKpiGroupMappingRepository mappingRepository,
         ILogger<KpiGroupingService> logger)
     {
         _openAiClient = openAiClient;
@@ -47,6 +49,7 @@ public class KpiGroupingService
         _sqlRepository = sqlRepository;
         _kpiGroupRepository = kpiGroupRepository;
         _sqlAnalysisRepository = sqlAnalysisRepository;
+        _mappingRepository = mappingRepository;
         _logger = logger;
     }
 
@@ -110,17 +113,20 @@ public class KpiGroupingService
         // ── Phase 3: Merge groups with the same name across batches ──────────
         var mergedGroups = MergeGroups(allDiscoveredGroups);
 
-        // ── Phase 4: Persist groups and assign reports ────────────────────────
+        // ── Phase 4: Persist groups, store Reason, and populate mapping table ──
         foreach (var group in mergedGroups)
         {
             if (cancellationToken.IsCancellationRequested) break;
 
-            // Reuse existing group if the LLM produced the same name in a prior run
+            // Reuse existing group if the LLM produced the same name in a prior run;
+            // always refresh the Reason so it reflects the latest analysis.
             var existing = await _kpiGroupRepository.GetByNameAsync(group.Name);
             int groupId;
             if (existing != null)
             {
                 groupId = existing.Id;
+                if (!string.IsNullOrWhiteSpace(group.Reason))
+                    await _kpiGroupRepository.UpdateReasonAsync(groupId, group.Reason);
             }
             else
             {
@@ -128,6 +134,7 @@ public class KpiGroupingService
                 {
                     Name = group.Name,
                     Description = group.Description,
+                    Reason = group.Reason,
                     CreatedAt = DateTime.UtcNow
                 });
                 result.GroupsDiscovered++;
@@ -137,7 +144,17 @@ public class KpiGroupingService
             {
                 try
                 {
+                    // Update the denormalised KpiGroupId on the Reports row
                     await _reportRepository.UpdateKpiGroupAsync(reportId, groupId);
+
+                    // Insert (or confirm) the explicit mapping record
+                    await _mappingRepository.InsertAsync(new ReportKpiGroupMapping
+                    {
+                        ReportId = reportId,
+                        KpiGroupId = groupId,
+                        AssignedAt = DateTime.UtcNow
+                    });
+
                     result.ReportsGrouped++;
                 }
                 catch (Exception ex)

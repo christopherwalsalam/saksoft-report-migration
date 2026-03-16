@@ -133,6 +133,7 @@ public class AzureOpenAiHttpClient : IAzureOpenAiClient
                         {
                           "name": "<specific KPI name derived from SQL patterns>",
                           "description": "<technical description: which tables/columns define this KPI>",
+                          "reason": "<explicit explanation of WHY these reports are grouped together — cite the specific shared tables, columns, aggregation functions, join patterns, or filter fields that prove they measure the same KPI>",
                           "reportIds": [<integer>, ...]
                         }
                       ]
@@ -197,8 +198,9 @@ public class AzureOpenAiHttpClient : IAzureOpenAiClient
 
             foreach (var groupEl in groupsElement.EnumerateArray())
             {
-                var name = groupEl.TryGetProperty("name", out var n) ? n.GetString() ?? "Unknown" : "Unknown";
+                var name        = groupEl.TryGetProperty("name",        out var n) ? n.GetString() ?? "Unknown" : "Unknown";
                 var description = groupEl.TryGetProperty("description", out var d) ? d.GetString() ?? "" : "";
+                var reason      = groupEl.TryGetProperty("reason",      out var r) ? r.GetString() ?? "" : "";
 
                 var reportIds = new List<int>();
                 if (groupEl.TryGetProperty("reportIds", out var idsEl))
@@ -219,6 +221,7 @@ public class AzureOpenAiHttpClient : IAzureOpenAiClient
                     {
                         Name = name,
                         Description = description,
+                        Reason = reason,
                         ReportIds = reportIds
                     });
                 }

@@ -42,10 +42,18 @@ public class KpiGroupRepository : IKpiGroupRepository
     {
         using var conn = CreateConnection();
         var sql = """
-            INSERT INTO KpiGroups (Name, Description, CreatedAt)
-            VALUES (@Name, @Description, @CreatedAt);
+            INSERT INTO KpiGroups (Name, Description, Reason, CreatedAt)
+            VALUES (@Name, @Description, @Reason, @CreatedAt);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
         return await conn.ExecuteScalarAsync<int>(sql, kpiGroup);
+    }
+
+    public async Task UpdateReasonAsync(int id, string reason)
+    {
+        using var conn = CreateConnection();
+        await conn.ExecuteAsync(
+            "UPDATE KpiGroups SET Reason = @Reason WHERE Id = @Id",
+            new { Id = id, Reason = reason });
     }
 }

@@ -8,4 +8,5 @@ public interface IKpiGroupRepository
     Task<KpiGroup?> GetByIdAsync(int id);
     Task<KpiGroup?> GetByNameAsync(string name);
     Task<int> InsertAsync(KpiGroup kpiGroup);
+    Task UpdateReasonAsync(int id, string reason);
 }
