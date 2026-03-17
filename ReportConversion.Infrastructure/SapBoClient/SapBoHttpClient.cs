@@ -85,8 +85,56 @@ public class SapBoHttpClient : ISapBoClient
 
         var content = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(content);
+        var report = MapToReport(doc.RootElement);
 
-        return MapToReport(doc.RootElement);
+        // --- Scheduling enrichment ---
+        // The per-document endpoint may not return full scheduling detail.
+        // Call the dedicated scheduling endpoint and override the flags when it
+        // returns definitive data.  A 404 simply means the report is not scheduled.
+        try
+        {
+            var schedUrl = $"{_settings.BaseUrl}/biprws/raylight/v1/documents/{sapReportId}/scheduling";
+            var schedResponse = await _httpClient.GetAsync(schedUrl);
+
+            if (schedResponse.IsSuccessStatusCode)
+            {
+                var schedContent = await schedResponse.Content.ReadAsStringAsync();
+                var schedDoc = JsonDocument.Parse(schedContent);
+                var root = schedDoc.RootElement;
+
+                // If the scheduling endpoint returns a non-empty schedule object the
+                // report has at least one active or paused schedule.
+                // Supported response shapes:
+                //   { "schedule": { "recurrenceType": "daily" } }
+                //   { "schedules": [ ... ] }
+                bool hasSchedule = false;
+                if (root.TryGetProperty("schedule", out var sched))
+                {
+                    // recurrenceType "none" / "once" / "" means no recurring schedule
+                    var rt = sched.TryGetProperty("recurrenceType", out var rt2)
+                        ? rt2.GetString()?.ToLowerInvariant()
+                        : null;
+                    hasSchedule = rt is not (null or "" or "none" or "once");
+                }
+                else if (root.TryGetProperty("schedules", out var scheds))
+                {
+                    hasSchedule = scheds.GetArrayLength() > 0;
+                }
+
+                if (hasSchedule)
+                    report.IsScheduled = true;
+
+                // Subscription / publication check within the scheduling response
+                if (root.TryGetProperty("hasSubscriptions", out var hasSub) && hasSub.GetBoolean())
+                    report.HasActiveSubscriptions = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not retrieve scheduling info for report {SapReportId} — using document-level flags", sapReportId);
+        }
+
+        return report;
     }
 
     public async Task<IEnumerable<ReportElement>> GetReportElementsAsync(string sapReportId, string token)
@@ -211,8 +259,32 @@ public class SapBoHttpClient : ISapBoClient
             Owner = el.TryGetProperty("owner", out var owner) ? owner.GetString() : null,
             FolderPath = el.TryGetProperty("cuid", out var cuid) ? cuid.GetString() : null,
             CreatedDate = el.TryGetProperty("creationDate", out var cd) && cd.TryGetDateTime(out var cdt) ? cdt : DateTime.UtcNow,
-            LastModifiedDate = el.TryGetProperty("lastModificationDate", out var lmd) && lmd.TryGetDateTime(out var lmdt) ? lmdt : DateTime.UtcNow,
-            LastRunDate = el.TryGetProperty("lastSuccessfulInstanceDate", out var lrd) && lrd.TryGetDateTime(out var lrdt) ? lrdt : null,
+
+            // SAP BO field name varies by version — try all known variants in order of precedence.
+            LastModifiedDate = TryParseDate(el, "lastModificationDate", "updateDate") ?? DateTime.UtcNow,
+
+            // SAP BO last-run date also has multiple field names across versions.
+            // "lastSuccessfulInstanceDate" is the 4.x standard; "lastRunDate" / "updateDate"
+            // are seen in some SP and patch levels. Falls back to null (never run) only if
+            // none of the fields is present and parseable.
+            LastRunDate = TryParseDate(el,
+                "lastSuccessfulInstanceDate",
+                "lastRunDate",
+                "lastSuccessDate",
+                "si_success_date"),
+
+            // "scheduleStatus" is the primary flag in SAP BO 4.x:
+            //   0 or absent  → not scheduled
+            //   1            → scheduled / active
+            //   2            → paused / suspended
+            // Some versions expose it as a bool "isScheduled".
+            IsScheduled = TryGetScheduledFlag(el),
+
+            // A report "HasActiveSubscriptions" when it has been set up to deliver output
+            // to one or more recipients (publications / subscriptions).
+            // SAP BO surfaces this through "hasSubscriptions", "publicationCount",
+            // or a non-zero "subscriberCount".
+            HasActiveSubscriptions = TryGetSubscriptionsFlag(el),
         };
 
         if (el.TryGetProperty("type", out var typeEl))
@@ -238,6 +310,83 @@ public class SapBoHttpClient : ISapBoClient
         "image" => "Image",
         _ => "Custom Visual"
     };
+
+    /// <summary>
+    /// Tries each field name in order and returns the first parseable DateTime, or null.
+    /// Handles both ISO-8601 strings and SAP's legacy /Date(ms)/ format.
+    /// </summary>
+    private static DateTime? TryParseDate(JsonElement el, params string[] fieldNames)
+    {
+        foreach (var field in fieldNames)
+        {
+            if (!el.TryGetProperty(field, out var prop)) continue;
+
+            // Standard ISO-8601 datetime string
+            if (prop.TryGetDateTime(out var dt)) return dt;
+
+            // SAP legacy format: "/Date(1698768000000)/"
+            var raw = prop.GetString();
+            if (raw != null && raw.StartsWith("/Date(", StringComparison.Ordinal))
+            {
+                var ms = raw[6..raw.IndexOf(')', 6)];
+                if (long.TryParse(ms, out var epoch))
+                    return DateTimeOffset.FromUnixTimeMilliseconds(epoch).UtcDateTime;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns true when the SAP BO document response indicates the report has a
+    /// recurring schedule.  Checks several field names / value shapes used across
+    /// SAP BO 4.x patch levels.
+    /// </summary>
+    private static bool TryGetScheduledFlag(JsonElement el)
+    {
+        // Boolean field (some versions)
+        foreach (var field in new[] { "isScheduled", "hasSchedule" })
+        {
+            if (el.TryGetProperty(field, out var b) && b.ValueKind == JsonValueKind.True)
+                return true;
+        }
+
+        // Numeric scheduleStatus: 0 = not scheduled, 1 = active, 2 = paused
+        if (el.TryGetProperty("scheduleStatus", out var status))
+        {
+            if (status.ValueKind == JsonValueKind.Number &&
+                status.TryGetInt32(out var n) && n > 0) return true;
+
+            if (status.ValueKind == JsonValueKind.String)
+            {
+                var s = status.GetString()?.ToLowerInvariant();
+                if (s is "1" or "scheduled" or "active" or "paused") return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true when the SAP BO document response indicates the report has active
+    /// subscribers / publications.
+    /// </summary>
+    private static bool TryGetSubscriptionsFlag(JsonElement el)
+    {
+        foreach (var field in new[] { "hasSubscriptions", "hasActiveSubscriptions" })
+        {
+            if (el.TryGetProperty(field, out var b) && b.ValueKind == JsonValueKind.True)
+                return true;
+        }
+
+        // Some versions expose a count instead of a boolean
+        foreach (var field in new[] { "subscriberCount", "publicationCount", "subscriptionCount" })
+        {
+            if (el.TryGetProperty(field, out var count) &&
+                count.TryGetInt32(out var n) && n > 0) return true;
+        }
+
+        return false;
+    }
 
     private static string ComputeFingerprint(string sql)
     {
