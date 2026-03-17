@@ -26,6 +26,13 @@ public class ReportSqlRepository : IReportSqlRepository
             new { ReportId = reportId });
     }
 
+    public async Task<IEnumerable<ReportSql>> GetAllAsync()
+    {
+        using var conn = CreateConnection();
+        return await conn.QueryAsync<ReportSql>(
+            "SELECT Id, ReportId, SqlText, SqlFingerprint, QueryName FROM ReportSQLs ORDER BY ReportId");
+    }
+
     public async Task<int> InsertAsync(ReportSql reportSql)
     {
         using var conn = CreateConnection();

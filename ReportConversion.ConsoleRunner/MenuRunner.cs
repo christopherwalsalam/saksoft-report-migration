@@ -130,8 +130,8 @@ public static class MenuRunner
 
     private static async Task FindDuplicatesAsync(IServiceProvider services)
     {
-        PrintHeader("4. Find Duplicate Reports (Embeddings)");
-        Log.Information("Generating embeddings and detecting duplicate reports...");
+        PrintHeader("4. Find Duplicate Reports (SQL-first, 3-tier)");
+        Log.Information("Running 3-tier duplicate detection (SQL fingerprint → SQL embedding → metadata embedding)...");
 
         using var scope = services.CreateScope();
         var svc = scope.ServiceProvider.GetRequiredService<DuplicateDetectionService>();
@@ -139,7 +139,10 @@ public static class MenuRunner
         try
         {
             var result = await svc.FindDuplicatesAsync();
-            PrintSuccess($"Duplicate detection complete. Pairs found: {result.DuplicatePairsFound}");
+            PrintSuccess($"Duplicate detection complete. Total pairs: {result.TotalPairsFound}");
+            Console.WriteLine($"    Tier 1 — SQL Fingerprint  : {result.SqlFingerprintPairs} pairs");
+            Console.WriteLine($"    Tier 2 — SQL Embedding    : {result.SqlEmbeddingPairs} pairs");
+            Console.WriteLine($"    Tier 3 — Metadata Embedding: {result.MetadataEmbeddingPairs} pairs");
         }
         catch (Exception ex)
         {

@@ -37,8 +37,8 @@ public class DuplicateReportRepository : IDuplicateReportRepository
     {
         using var conn = CreateConnection();
         var sql = """
-            INSERT INTO DuplicateReports (ReportId1, ReportId2, SimilarityScore, RecommendedAction, DetectedAt)
-            VALUES (@ReportId1, @ReportId2, @SimilarityScore, @RecommendedAction, @DetectedAt);
+            INSERT INTO DuplicateReports (ReportId1, ReportId2, SimilarityScore, RecommendedAction, DetectionMethod, DetectedAt)
+            VALUES (@ReportId1, @ReportId2, @SimilarityScore, @RecommendedAction, @DetectionMethod, @DetectedAt);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
         return await conn.ExecuteScalarAsync<int>(sql, new
@@ -47,6 +47,7 @@ public class DuplicateReportRepository : IDuplicateReportRepository
             duplicate.ReportId2,
             duplicate.SimilarityScore,
             RecommendedAction = duplicate.RecommendedAction.ToString(),
+            DetectionMethod   = duplicate.DetectionMethod.ToString(),
             duplicate.DetectedAt
         });
     }
