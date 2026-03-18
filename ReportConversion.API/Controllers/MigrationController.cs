@@ -18,45 +18,70 @@ public class MigrationController : ControllerBase
 {
     private readonly IMigrationJobRepository _jobRepository;
     private readonly IMigrationLogRepository _logRepository;
+    private readonly IBackgroundTaskRepository _taskRepository;
     private readonly IBackgroundJobClient _backgroundJobs;
     private readonly ILogger<MigrationController> _logger;
 
     public MigrationController(
         IMigrationJobRepository jobRepository,
         IMigrationLogRepository logRepository,
+        IBackgroundTaskRepository taskRepository,
         IBackgroundJobClient backgroundJobs,
         ILogger<MigrationController> logger)
     {
         _jobRepository = jobRepository;
         _logRepository = logRepository;
+        _taskRepository = taskRepository;
         _backgroundJobs = backgroundJobs;
         _logger = logger;
     }
 
     /// <summary>
     /// Starts migration for all reports, or a specific set of report IDs.
+    /// Returns a taskId for UI polling in addition to the Hangfire job ID.
     /// </summary>
     /// <param name="request">Optional list of report IDs to migrate. Leave empty to migrate all.</param>
     [HttpPost("start")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status202Accepted)]
-    public IActionResult StartMigration(
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> StartMigration(
         [FromBody] MigrationStartRequest? request,
         [FromServices] MigrationService migrationService)
     {
-        string jobId;
+        var taskId = await _taskRepository.CreateAsync("Migration");
+
         if (request?.ReportIds != null && request.ReportIds.Any())
         {
             var ids = request.ReportIds.ToList();
-            jobId = _backgroundJobs.Enqueue(() => migrationService.MigrateReportsByIdsAsync(ids, CancellationToken.None));
-            _logger.LogInformation("Migration job enqueued for {Count} reports: {JobId}", ids.Count, jobId);
-            return Accepted(ApiResponse<string>.Ok(jobId, $"Migration started for {ids.Count} reports"));
+            _backgroundJobs.Enqueue(() => migrationService.MigrateReportsByIdsWithTrackingAsync(ids, taskId, CancellationToken.None));
+            _logger.LogInformation("Migration task started for {Count} reports: {TaskId}", ids.Count, taskId);
+            return Accepted(ApiResponse<object>.Ok(new { taskId }, $"Migration started for {ids.Count} reports"));
         }
         else
         {
-            jobId = _backgroundJobs.Enqueue(() => migrationService.MigrateAllReportsAsync(CancellationToken.None));
-            _logger.LogInformation("Full migration job enqueued: {JobId}", jobId);
-            return Accepted(ApiResponse<string>.Ok(jobId, "Full migration started for all reports"));
+            _backgroundJobs.Enqueue(() => migrationService.MigrateAllReportsWithTrackingAsync(taskId, CancellationToken.None));
+            _logger.LogInformation("Full migration task started: {TaskId}", taskId);
+            return Accepted(ApiResponse<object>.Ok(new { taskId }, "Full migration started for all reports"));
         }
+    }
+
+    /// <summary>
+    /// Returns a migration summary — called by the UI after the migration task completes.
+    /// </summary>
+    [HttpGet("summary")]
+    [ProducesResponseType(typeof(ApiResponse<MigrationSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMigrationSummary()
+    {
+        var (total, success, failed, pending, inProgress) = await _jobRepository.GetSummaryAsync();
+
+        var summary = new MigrationSummaryDto
+        {
+            TotalAttempted = total,
+            SuccessCount = success,
+            FailureCount = failed,
+            SuccessRate = total > 0 ? Math.Round((double)success / total * 100, 1) : 0.0,
+        };
+
+        return Ok(ApiResponse<MigrationSummaryDto>.Ok(summary));
     }
 
     /// <summary>

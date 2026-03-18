@@ -16,4 +16,10 @@ public interface IReportRepository
     Task UpdateKpiGroupAsync(int id, int kpiGroupId);
     Task UpdateEmbeddingAsync(int id, string embeddingVector);
     Task<IEnumerable<Report>> GetAllForEmbeddingAsync();
+
+    // UI-facing filtered queries
+    Task<IEnumerable<Report>> GetAllFilteredAsync(string? search, string? type, string? folder, DateTime? fromDate, DateTime? toDate, int page, int pageSize);
+    Task<int> GetFilteredCountAsync(string? search, string? type, string? folder, DateTime? fromDate, DateTime? toDate);
+    Task<IEnumerable<Report>> GetStaleFilteredAsync(string? search, UsageStatus? status, DateTime? fromDate, DateTime? toDate, int page, int pageSize);
+    Task<int> GetStaleFilteredCountAsync(string? search, UsageStatus? status, DateTime? fromDate, DateTime? toDate);
 }

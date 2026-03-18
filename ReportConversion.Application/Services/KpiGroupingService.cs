@@ -29,6 +29,7 @@ public class KpiGroupingService
     private readonly IReportSqlAnalysisRepository _sqlAnalysisRepository;
     private readonly IReportKpiGroupMappingRepository _mappingRepository;
     private readonly ILogger<KpiGroupingService> _logger;
+    private readonly IBackgroundTaskRepository _taskRepository;
 
     // Maximum reports sent to the LLM in a single grouping call.
     // GPT-4o has a 128 K token window; each SQL summary is capped at ~400 chars,
@@ -42,7 +43,8 @@ public class KpiGroupingService
         IKpiGroupRepository kpiGroupRepository,
         IReportSqlAnalysisRepository sqlAnalysisRepository,
         IReportKpiGroupMappingRepository mappingRepository,
-        ILogger<KpiGroupingService> logger)
+        ILogger<KpiGroupingService> logger,
+        IBackgroundTaskRepository taskRepository)
     {
         _openAiClient = openAiClient;
         _reportRepository = reportRepository;
@@ -51,6 +53,7 @@ public class KpiGroupingService
         _sqlAnalysisRepository = sqlAnalysisRepository;
         _mappingRepository = mappingRepository;
         _logger = logger;
+        _taskRepository = taskRepository;
     }
 
     public async Task<SqlKpiGroupingResult> GroupReportsByKpiAsync(CancellationToken cancellationToken = default)
@@ -361,4 +364,20 @@ public class KpiGroupingService
     {
         "SUM", "COUNT", "AVG", "MAX", "MIN", "STDEV", "VARIANCE", "COUNT_BIG"
     };
+
+    public async Task GroupReportsByKpiWithTrackingAsync(string taskId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _taskRepository.UpdateProgressAsync(taskId, "Running", 5, "Extracting SQL signals...");
+            await GroupReportsByKpiAsync(cancellationToken);
+            await _taskRepository.CompleteAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Tracked KPI grouping failed for task {TaskId}", taskId);
+            await _taskRepository.FailAsync(taskId, ex.Message);
+            throw;
+        }
+    }
 }

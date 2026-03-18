@@ -15,6 +15,7 @@ public class MetadataExtractionService
     private readonly IReportSqlRepository _sqlRepository;
     private readonly ILogger<MetadataExtractionService> _logger;
     private readonly SapBoSettings _settings;
+    private readonly IBackgroundTaskRepository _taskRepository;
 
     public MetadataExtractionService(
         ISapBoClient sapBoClient,
@@ -22,7 +23,8 @@ public class MetadataExtractionService
         IReportElementRepository elementRepository,
         IReportSqlRepository sqlRepository,
         ILogger<MetadataExtractionService> logger,
-        IOptions<SapBoSettings> settings)
+        IOptions<SapBoSettings> settings,
+        IBackgroundTaskRepository taskRepository)
     {
         _sapBoClient = sapBoClient;
         _reportRepository = reportRepository;
@@ -30,6 +32,7 @@ public class MetadataExtractionService
         _sqlRepository = sqlRepository;
         _logger = logger;
         _settings = settings.Value;
+        _taskRepository = taskRepository;
     }
 
     public async Task<ExtractionResult> ExtractAllReportsAsync(CancellationToken cancellationToken = default)
@@ -103,6 +106,26 @@ public class MetadataExtractionService
 
         _logger.LogInformation("Extraction complete. Extracted: {Extracted}, Failed: {Failed}", result.ExtractedCount, result.FailedCount);
         return result;
+    }
+
+    /// <summary>
+    /// Wrapper called by the UI-facing ExtractionController — updates BackgroundTasks table throughout.
+    /// Injected as a Hangfire job; IBackgroundTaskRepository is resolved by Hangfire's IoC activator.
+    /// </summary>
+    public async Task ExtractAllReportsWithTrackingAsync(string taskId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _taskRepository.UpdateProgressAsync(taskId, "Running", 5, "Authenticating with SAP BO...");
+            var result = await ExtractAllReportsAsync(cancellationToken);
+            await _taskRepository.CompleteAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Tracked extraction failed for task {TaskId}", taskId);
+            await _taskRepository.FailAsync(taskId, ex.Message);
+            throw;
+        }
     }
 }
 

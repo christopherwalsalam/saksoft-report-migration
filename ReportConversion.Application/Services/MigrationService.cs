@@ -17,6 +17,7 @@ public class MigrationService
     private readonly IBlobStorageClient _blobStorage;
     private readonly ILogger<MigrationService> _logger;
     private readonly MigrationSettings _settings;
+    private readonly IBackgroundTaskRepository _taskRepository;
 
     public MigrationService(
         IReportRepository reportRepository,
@@ -26,7 +27,8 @@ public class MigrationService
         IPowerBiClient powerBiClient,
         IBlobStorageClient blobStorage,
         ILogger<MigrationService> logger,
-        IOptions<MigrationSettings> settings)
+        IOptions<MigrationSettings> settings,
+        IBackgroundTaskRepository taskRepository)
     {
         _reportRepository = reportRepository;
         _elementRepository = elementRepository;
@@ -36,6 +38,7 @@ public class MigrationService
         _blobStorage = blobStorage;
         _logger = logger;
         _settings = settings.Value;
+        _taskRepository = taskRepository;
     }
 
     public async Task MigrateReportAsync(int reportId, CancellationToken cancellationToken = default)
@@ -121,5 +124,37 @@ public class MigrationService
             Details = details,
             Timestamp = DateTime.UtcNow
         });
+    }
+
+    public async Task MigrateAllReportsWithTrackingAsync(string taskId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _taskRepository.UpdateProgressAsync(taskId, "Running", 5, "Loading reports...");
+            await MigrateAllReportsAsync(cancellationToken);
+            await _taskRepository.CompleteAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Tracked migration failed for task {TaskId}", taskId);
+            await _taskRepository.FailAsync(taskId, ex.Message);
+            throw;
+        }
+    }
+
+    public async Task MigrateReportsByIdsWithTrackingAsync(IEnumerable<int> reportIds, string taskId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _taskRepository.UpdateProgressAsync(taskId, "Running", 5, "Starting migration...");
+            await MigrateReportsByIdsAsync(reportIds, cancellationToken);
+            await _taskRepository.CompleteAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Tracked migration (by IDs) failed for task {TaskId}", taskId);
+            await _taskRepository.FailAsync(taskId, ex.Message);
+            throw;
+        }
     }
 }

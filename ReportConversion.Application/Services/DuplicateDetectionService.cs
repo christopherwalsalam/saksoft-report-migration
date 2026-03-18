@@ -32,6 +32,7 @@ public class DuplicateDetectionService
     private readonly IDuplicateReportRepository _duplicateRepository;
     private readonly ILogger<DuplicateDetectionService> _logger;
     private readonly DuplicateDetectionSettings _settings;
+    private readonly IBackgroundTaskRepository _taskRepository;
 
     public DuplicateDetectionService(
         IAzureOpenAiClient openAiClient,
@@ -39,7 +40,8 @@ public class DuplicateDetectionService
         IReportSqlRepository sqlRepository,
         IDuplicateReportRepository duplicateRepository,
         ILogger<DuplicateDetectionService> logger,
-        IOptions<DuplicateDetectionSettings> settings)
+        IOptions<DuplicateDetectionSettings> settings,
+        IBackgroundTaskRepository taskRepository)
     {
         _openAiClient = openAiClient;
         _reportRepository = reportRepository;
@@ -47,6 +49,7 @@ public class DuplicateDetectionService
         _duplicateRepository = duplicateRepository;
         _logger = logger;
         _settings = settings.Value;
+        _taskRepository = taskRepository;
     }
 
     public async Task<DuplicateDetectionResult> FindDuplicatesAsync(CancellationToken cancellationToken = default)
@@ -275,6 +278,22 @@ public class DuplicateDetectionService
             magB += b[k] * b[k];
         }
         return magA == 0 || magB == 0 ? 0 : dot / (Math.Sqrt(magA) * Math.Sqrt(magB));
+    }
+
+    public async Task FindDuplicatesWithTrackingAsync(string taskId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _taskRepository.UpdateProgressAsync(taskId, "Running", 5, "Loading reports for comparison...");
+            await FindDuplicatesAsync(cancellationToken);
+            await _taskRepository.CompleteAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Tracked duplicate detection failed for task {TaskId}", taskId);
+            await _taskRepository.FailAsync(taskId, ex.Message);
+            throw;
+        }
     }
 }
 

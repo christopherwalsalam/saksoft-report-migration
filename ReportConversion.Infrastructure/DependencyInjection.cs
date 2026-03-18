@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IMigrationLogRepository, MigrationLogRepository>();
         services.AddScoped<IReportSqlAnalysisRepository, ReportSqlAnalysisRepository>();
         services.AddScoped<IReportKpiGroupMappingRepository, ReportKpiGroupMappingRepository>();
+        services.AddScoped<IBackgroundTaskRepository, BackgroundTaskRepository>();
 
         // HTTP clients with Polly retry
         services.AddHttpClient<ISapBoClient, SapBoHttpClient>()
