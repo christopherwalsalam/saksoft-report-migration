@@ -20,8 +20,7 @@ const AppLayout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          ml: `${sidebarWidth}px`,
-          transition: 'margin-left 0.2s ease',
+          ml: 0,
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',

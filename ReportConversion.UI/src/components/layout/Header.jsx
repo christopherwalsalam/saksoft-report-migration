@@ -25,9 +25,8 @@ const Header = ({ sidebarWidth }) => {
         zIndex: (theme) => theme.zIndex.drawer - 1,
         bgcolor: '#FFFFFF',
         borderBottom: '1px solid #E0E0E0',
-        left: sidebarWidth,
-        width: `calc(100% - ${sidebarWidth}px)`,
-        transition: 'left 0.2s ease, width 0.2s ease',
+        left: 0,
+        width: '100%',
       }}
     >
       <Toolbar sx={{ minHeight: '64px !important', px: 3 }}>
