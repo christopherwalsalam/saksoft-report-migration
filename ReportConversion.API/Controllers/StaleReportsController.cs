@@ -12,7 +12,7 @@ namespace ReportConversion.API.Controllers;
 /// UI-facing stale report endpoints — triggers analysis and returns paginated stale/unused reports.
 /// </summary>
 [ApiController]
-[Route("api/stale-reports")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class StaleReportsController : ControllerBase
@@ -37,7 +37,7 @@ public class StaleReportsController : ControllerBase
     /// <summary>
     /// Triggers stale report analysis. Returns a taskId for polling.
     /// </summary>
-    [HttpPost("start")]
+    [HttpPost("api/stale-reports/start")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
     public async Task<IActionResult> StartStaleAnalysis([FromServices] StaleReportService staleReportService)
     {
@@ -50,7 +50,7 @@ public class StaleReportsController : ControllerBase
     /// <summary>
     /// Returns paginated stale and never-used reports with optional filters.
     /// </summary>
-    [HttpGet]
+    [HttpGet("api/stale-reports/getstale")]
     [ProducesResponseType(typeof(PagedResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaleReports(
         [FromQuery] string? search = null,
@@ -91,7 +91,7 @@ public class StaleReportsController : ControllerBase
     /// <summary>
     /// Returns full metadata for a single stale report.
     /// </summary>
-    [HttpGet("{id:int}")]
+    [HttpGet("api/stale-reports/getstale/{id:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStaleReport(int id, [FromServices] IReportSqlRepository sqlRepository)

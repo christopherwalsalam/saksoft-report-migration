@@ -11,7 +11,7 @@ namespace ReportConversion.API.Controllers;
 /// UI-facing duplicate detection endpoints.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class DuplicatesController : ControllerBase
@@ -39,7 +39,7 @@ public class DuplicatesController : ControllerBase
     /// <summary>
     /// Triggers the three-tier duplicate detection pipeline. Returns a taskId for polling.
     /// </summary>
-    [HttpPost("start")]
+    [HttpPost("api/duplicates/start")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
     public async Task<IActionResult> StartDuplicateDetection([FromServices] DuplicateDetectionService duplicateService)
     {
@@ -52,7 +52,7 @@ public class DuplicatesController : ControllerBase
     /// <summary>
     /// Returns paginated duplicate report records with optional search and similarity filters.
     /// </summary>
-    [HttpGet]
+    [HttpGet("api/duplicates/getduplicates")]
     [ProducesResponseType(typeof(PagedResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuplicates(
         [FromQuery] string? search = null,
@@ -106,7 +106,7 @@ public class DuplicatesController : ControllerBase
     /// <summary>
     /// Returns all reports in a specific duplicate group, each with full metadata and SQL.
     /// </summary>
-    [HttpGet("{groupId:int}/reports")]
+    [HttpGet("api/duplicates/getduplicategroupreports/{groupId:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuplicateGroupReports(
         int groupId,

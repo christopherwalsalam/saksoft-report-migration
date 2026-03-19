@@ -11,10 +11,10 @@ export const startMigration = async (reportIds = null) => {
 };
 
 /**
- * GET /api/migration/summary
+ * GET /api/migration/getmigrationsummary
  * Returns migration summary after task completion
  */
 export const getMigrationSummary = async () => {
-  const { data } = await axiosInstance.get('/api/migration/summary');
+  const { data } = await axiosInstance.get('/api/migration/getmigrationsummary');
   return data.data ?? data;
 };

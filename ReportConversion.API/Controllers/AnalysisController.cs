@@ -11,7 +11,7 @@ namespace ReportConversion.API.Controllers;
 /// Handles AI-powered KPI grouping, KPI registry, and duplicate detection analysis.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class AnalysisController : ControllerBase
@@ -39,7 +39,7 @@ public class AnalysisController : ControllerBase
     /// <summary>
     /// Triggers KPI grouping via Azure OpenAI (GPT-4o) as a background job.
     /// </summary>
-    [HttpPost("group-by-kpi")]
+    [HttpPost("api/analysis/groupbykpi")]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status202Accepted)]
     public IActionResult TriggerKpiGrouping([FromServices] KpiGroupingService kpiGroupingService)
     {
@@ -51,7 +51,7 @@ public class AnalysisController : ControllerBase
     /// <summary>
     /// Returns all KPI groups with their associated report counts.
     /// </summary>
-    [HttpGet("kpi-groups")]
+    [HttpGet("api/analysis/getkpigroups")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKpiGroups([FromServices] IReportRepository reportRepository)
     {
@@ -77,7 +77,7 @@ public class AnalysisController : ControllerBase
     /// <summary>
     /// Returns the full KPI registry with all identified KPIs and their metrics.
     /// </summary>
-    [HttpGet("kpi-registry")]
+    [HttpGet("api/analysis/getkpiregistry")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKpiRegistry()
     {
@@ -88,7 +88,7 @@ public class AnalysisController : ControllerBase
     /// <summary>
     /// Triggers duplicate report detection using Azure OpenAI Embeddings (text-embedding-3-large).
     /// </summary>
-    [HttpPost("find-duplicates")]
+    [HttpPost("api/analysis/findduplicates")]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status202Accepted)]
     public IActionResult TriggerDuplicateDetection([FromServices] DuplicateDetectionService duplicateService)
     {
@@ -101,7 +101,7 @@ public class AnalysisController : ControllerBase
     /// Returns all detected duplicate report pairs, optionally filtered by minimum similarity score.
     /// </summary>
     /// <param name="minSimilarity">Minimum cosine similarity threshold (0.0–1.0). Defaults to configured value.</param>
-    [HttpGet("duplicates")]
+    [HttpGet("api/analysis/getduplicates")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuplicates([FromQuery] double? minSimilarity = null)
     {

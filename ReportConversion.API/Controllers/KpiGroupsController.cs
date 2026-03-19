@@ -11,7 +11,7 @@ namespace ReportConversion.API.Controllers;
 /// UI-facing KPI group endpoints — triggers grouping and returns groups with their reports.
 /// </summary>
 [ApiController]
-[Route("api/kpi-groups")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class KpiGroupsController : ControllerBase
@@ -39,7 +39,7 @@ public class KpiGroupsController : ControllerBase
     /// <summary>
     /// Triggers KPI grouping via Azure OpenAI GPT-4o. Returns a taskId for polling.
     /// </summary>
-    [HttpPost("start")]
+    [HttpPost("api/kpi-groups/start")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
     public async Task<IActionResult> StartKpiGrouping([FromServices] KpiGroupingService kpiGroupingService)
     {
@@ -52,7 +52,7 @@ public class KpiGroupsController : ControllerBase
     /// <summary>
     /// Returns paginated KPI groups with report counts and optional search filter.
     /// </summary>
-    [HttpGet]
+    [HttpGet("api/kpi-groups/getkpigroups")]
     [ProducesResponseType(typeof(PagedResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKpiGroups(
         [FromQuery] string? search = null,
@@ -105,7 +105,7 @@ public class KpiGroupsController : ControllerBase
     /// <summary>
     /// Returns all reports within a specific KPI group, with full metadata and SQL.
     /// </summary>
-    [HttpGet("{groupId:int}/reports")]
+    [HttpGet("api/kpi-groups/getkpigroupreports/{groupId:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetKpiGroupReports(

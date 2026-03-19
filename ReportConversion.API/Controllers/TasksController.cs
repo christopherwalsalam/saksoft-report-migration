@@ -9,7 +9,7 @@ namespace ReportConversion.API.Controllers;
 /// Provides task status polling for long-running background operations.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class TasksController : ControllerBase
@@ -28,7 +28,7 @@ public class TasksController : ControllerBase
     /// Polled every 3 seconds by the React UI.
     /// </summary>
     /// <param name="taskId">The task ID returned when the job was triggered.</param>
-    [HttpGet("{taskId}/status")]
+    [HttpGet("api/tasks/gettaskstatus/{taskId}")]
     [ProducesResponseType(typeof(ApiResponse<TaskStatusDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTaskStatus(string taskId)

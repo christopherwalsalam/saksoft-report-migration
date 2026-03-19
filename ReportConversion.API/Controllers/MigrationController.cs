@@ -11,7 +11,7 @@ namespace ReportConversion.API.Controllers;
 /// Controls Power BI migration operations — starting jobs, tracking progress, and reviewing logs.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class MigrationController : ControllerBase
@@ -41,7 +41,7 @@ public class MigrationController : ControllerBase
     /// Returns a taskId for UI polling in addition to the Hangfire job ID.
     /// </summary>
     /// <param name="request">Optional list of report IDs to migrate. Leave empty to migrate all.</param>
-    [HttpPost("start")]
+    [HttpPost("api/migration/start")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
     public async Task<IActionResult> StartMigration(
         [FromBody] MigrationStartRequest? request,
@@ -67,7 +67,7 @@ public class MigrationController : ControllerBase
     /// <summary>
     /// Returns a migration summary — called by the UI after the migration task completes.
     /// </summary>
-    [HttpGet("summary")]
+    [HttpGet("api/migration/getmigrationsummary")]
     [ProducesResponseType(typeof(ApiResponse<MigrationSummaryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMigrationSummary()
     {
@@ -87,7 +87,7 @@ public class MigrationController : ControllerBase
     /// <summary>
     /// Returns an overall summary of migration progress across all reports.
     /// </summary>
-    [HttpGet("status")]
+    [HttpGet("api/migration/getmigrationstatus")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMigrationStatus()
     {
@@ -107,7 +107,7 @@ public class MigrationController : ControllerBase
     /// Returns the status of a specific migration job by its job ID.
     /// </summary>
     /// <param name="jobId">Internal migration job ID</param>
-    [HttpGet("status/{jobId:int}")]
+    [HttpGet("api/migration/getjobstatus/{jobId:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetJobStatus(int jobId)
@@ -123,7 +123,7 @@ public class MigrationController : ControllerBase
     /// Returns all migration log entries for a specific report.
     /// </summary>
     /// <param name="reportId">Internal report ID</param>
-    [HttpGet("logs/{reportId:int}")]
+    [HttpGet("api/migration/getmigrationlogs/{reportId:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMigrationLogs(int reportId)
     {

@@ -18,15 +18,15 @@ export const getDuplicates = async ({ search, minSimilarity, groupId, page = 1, 
   if (search) params.search = search;
   if (minSimilarity != null) params.minSimilarity = minSimilarity;
   if (groupId) params.groupId = groupId;
-  const { data } = await axiosInstance.get('/api/duplicates', { params });
+  const { data } = await axiosInstance.get('/api/duplicates/getduplicates', { params });
   return data;
 };
 
 /**
- * GET /api/duplicates/{groupId}/reports
+ * GET /api/duplicates/getduplicategroupreports/{groupId}
  * Returns all reports in a duplicate group with full detail
  */
 export const getDuplicateGroupReports = async (groupId) => {
-  const { data } = await axiosInstance.get(`/api/duplicates/${groupId}/reports`);
+  const { data } = await axiosInstance.get(`/api/duplicates/getduplicategroupreports/${groupId}`);
   return data.data ?? data;
 };

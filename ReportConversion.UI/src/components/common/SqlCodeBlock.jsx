@@ -4,6 +4,24 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CodeIcon from '@mui/icons-material/Code';
 
+const NEWLINE_BEFORE = [
+  'SELECT', 'FROM', 'WHERE', 'AND', 'OR',
+  'LEFT OUTER JOIN', 'RIGHT OUTER JOIN', 'FULL OUTER JOIN',
+  'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'CROSS JOIN', 'JOIN',
+  'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET',
+  'UNION ALL', 'UNION',
+  'INSERT INTO', 'DELETE FROM', 'UPDATE', 'SET', 'ON',
+];
+
+function formatSql(sql) {
+  if (!sql || typeof sql !== 'string') return sql;
+  let s = sql.replace(/\s+/g, ' ').trim();
+  NEWLINE_BEFORE.forEach((kw) => {
+    s = s.replace(new RegExp(`\\b(${kw})\\b`, 'gi'), '\n$1');
+  });
+  return s.replace(/^\n/, '').trim();
+}
+
 /**
  * Renders one or more SQL query strings in a dark syntax-highlighted code block.
  *
@@ -65,7 +83,7 @@ const SqlCodeBlock = ({ sqls, label }) => {
             showLineNumbers
             wrapLongLines={false}
           >
-            {sql.trim()}
+            {formatSql(sql)}
           </SyntaxHighlighter>
         </Box>
       ))}

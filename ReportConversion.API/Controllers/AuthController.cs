@@ -11,7 +11,7 @@ namespace ReportConversion.API.Controllers;
 /// Issues JWT tokens for API authentication.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Produces("application/json")]
 public class AuthController : ControllerBase
 {
@@ -30,7 +30,7 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// In production, replace the hardcoded credential check with a proper identity store.
     /// </remarks>
-    [HttpPost("token")]
+    [HttpPost("api/auth/token")]
     [ProducesResponseType(typeof(ApiResponse<TokenResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult GetToken([FromBody] LoginRequest request)

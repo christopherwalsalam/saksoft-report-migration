@@ -12,7 +12,7 @@ namespace ReportConversion.API.Controllers;
 /// Manages SAP BusinessObjects metadata extraction and report querying.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class MetadataController : ControllerBase
@@ -35,7 +35,7 @@ public class MetadataController : ControllerBase
     /// Triggers a full SAP BO metadata extraction as a background job.
     /// </summary>
     /// <returns>The Hangfire job ID for tracking.</returns>
-    [HttpPost("extract")]
+    [HttpPost("api/metadata/extract")]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status202Accepted)]
     public IActionResult TriggerExtraction([FromServices] MetadataExtractionService extractionService)
     {
@@ -50,7 +50,7 @@ public class MetadataController : ControllerBase
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 50, max: 500)</param>
     /// <param name="filter">Optional name/description filter</param>
-    [HttpGet("reports")]
+    [HttpGet("api/metadata/getreports")]
     [ProducesResponseType(typeof(PagedResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReports(
         [FromQuery] int page = 1,
@@ -78,7 +78,7 @@ public class MetadataController : ControllerBase
     /// Returns full metadata for a single report by its internal ID.
     /// </summary>
     /// <param name="id">Internal report ID</param>
-    [HttpGet("reports/{id:int}")]
+    [HttpGet("api/metadata/getreport/{id:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetReport(int id)
@@ -93,7 +93,7 @@ public class MetadataController : ControllerBase
     /// <summary>
     /// Returns all stale and never-used reports based on the configured threshold.
     /// </summary>
-    [HttpGet("stale")]
+    [HttpGet("api/metadata/getstale")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaleReports()
     {

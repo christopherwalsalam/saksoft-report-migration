@@ -11,7 +11,7 @@ namespace ReportConversion.API.Controllers;
 /// UI-facing extraction endpoints — wraps MetadataExtractionService with task-tracking support.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize]
 [Produces("application/json")]
 public class ExtractionController : ControllerBase
@@ -36,7 +36,7 @@ public class ExtractionController : ControllerBase
     /// <summary>
     /// Triggers SAP BO metadata extraction. Returns a taskId for polling progress.
     /// </summary>
-    [HttpPost("start")]
+    [HttpPost("api/extraction/start")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
     public async Task<IActionResult> StartExtraction([FromServices] MetadataExtractionService extractionService)
     {
@@ -49,7 +49,7 @@ public class ExtractionController : ControllerBase
     /// <summary>
     /// Returns a paginated, filterable list of extracted reports.
     /// </summary>
-    [HttpGet("/api/reports")]
+    [HttpGet("api/extraction/getreports")]
     [ProducesResponseType(typeof(PagedResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReports(
         [FromQuery] string? search = null,
@@ -83,7 +83,7 @@ public class ExtractionController : ControllerBase
     /// <summary>
     /// Returns full metadata and SQL for a single report.
     /// </summary>
-    [HttpGet("/api/reports/{id:int}")]
+    [HttpGet("api/extraction/getreport/{id:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetReport(int id, [FromServices] IReportSqlRepository sqlRepository)

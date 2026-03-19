@@ -19,15 +19,15 @@ export const getStaleReports = async ({ search, staleReason, fromDate, toDate, p
   if (staleReason) params.staleReason = staleReason;
   if (fromDate) params.fromDate = fromDate;
   if (toDate) params.toDate = toDate;
-  const { data } = await axiosInstance.get('/api/stale-reports', { params });
+  const { data } = await axiosInstance.get('/api/stale-reports/getstale', { params });
   return data;
 };
 
 /**
- * GET /api/stale-reports/{id}
+ * GET /api/stale-reports/getstale/{id}
  * Returns full stale report detail
  */
 export const getStaleReportById = async (id) => {
-  const { data } = await axiosInstance.get(`/api/stale-reports/${id}`);
+  const { data } = await axiosInstance.get(`/api/stale-reports/getstale/${id}`);
   return data.data ?? data;
 };

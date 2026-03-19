@@ -47,13 +47,13 @@ const theme = createTheme({
 
   typography: {
     fontFamily: '"Inter", "Helvetica Neue", Arial, sans-serif',
-    h4: { fontWeight: 700, letterSpacing: '-0.5px', color: '#111827' },
-    h5: { fontWeight: 700, letterSpacing: '-0.3px', color: '#111827' },
-    h6: { fontWeight: 600, color: '#111827' },
-    subtitle1: { fontWeight: 500, color: '#374151' },
-    subtitle2: { fontWeight: 400, color: '#6B7280', fontSize: '0.875rem' },
-    body1: { color: '#374151' },
-    body2: { color: '#6B7280', fontSize: '0.875rem' },
+    h4: { fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.3px', color: '#111827' },
+    h5: { fontWeight: 700, fontSize: '1.05rem', letterSpacing: '-0.2px', color: '#111827' },
+    h6: { fontWeight: 600, fontSize: '0.9375rem', color: '#111827' },
+    subtitle1: { fontWeight: 500, fontSize: '0.875rem', color: '#374151' },
+    subtitle2: { fontWeight: 400, color: '#6B7280', fontSize: '0.8125rem' },
+    body1: { color: '#374151', fontSize: '0.875rem' },
+    body2: { color: '#6B7280', fontSize: '0.8125rem' },
     caption: { color: '#9CA3AF', fontSize: '0.75rem' },
     button: {
       fontWeight: 600,
@@ -71,32 +71,35 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 50,           // pill shape
-          padding: '9px 22px',
+          borderRadius: 8,
+          padding: '7px 18px',
           boxShadow: 'none',
           fontSize: '0.875rem',
           fontWeight: 600,
           '&:hover': {
-            boxShadow: '0 4px 14px rgba(79,108,247,0.30)',
+            boxShadow: '0 2px 8px rgba(79,108,247,0.20)',
           },
         },
         containedPrimary: {
-          background: 'linear-gradient(135deg, #4F6CF7 0%, #818CF8 100%)',
+          backgroundColor: '#4F6CF7',
           '&:hover': {
-            background: 'linear-gradient(135deg, #3A54E0 0%, #6875F5 100%)',
+            backgroundColor: '#3A54E0',
+            boxShadow: '0 2px 8px rgba(79,108,247,0.25)',
           },
         },
         containedSecondary: {
-          background: 'linear-gradient(135deg, #818CF8 0%, #A5B0FB 100%)',
+          backgroundColor: '#818CF8',
+          '&:hover': {
+            backgroundColor: '#6366F1',
+          },
         },
         outlined: {
-          borderRadius: 50,
           borderColor: '#D1D5DB',
           color: '#374151',
           '&:hover': {
             borderColor: '#4F6CF7',
             color: '#4F6CF7',
-            background: '#F0F4FF',
+            background: '#F5F8FF',
             boxShadow: 'none',
           },
         },
@@ -109,8 +112,12 @@ const theme = createTheme({
           },
         },
         sizeLarge: {
-          padding: '11px 28px',
+          padding: '9px 24px',
           fontSize: '0.9375rem',
+        },
+        sizeSmall: {
+          padding: '4px 12px',
+          fontSize: '0.8125rem',
         },
       },
     },
