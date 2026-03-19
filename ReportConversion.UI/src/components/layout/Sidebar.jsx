@@ -13,40 +13,15 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import MenuIcon from '@mui/icons-material/Menu';
 import BarChartIcon from '@mui/icons-material/BarChart';
 
-const SIDEBAR_FULL_WIDTH = 240;
+const SIDEBAR_FULL_WIDTH = 248;
 const SIDEBAR_MINI_WIDTH = 64;
 
 const NAV_ITEMS = [
-  {
-    path: '/extraction',
-    label: 'SAP BO Extraction',
-    icon: <CloudDownloadIcon />,
-    description: 'Extract report metadata',
-  },
-  {
-    path: '/stale-reports',
-    label: 'Stale Reports',
-    icon: <ReportProblemIcon />,
-    description: 'Identify unused reports',
-  },
-  {
-    path: '/kpi-groups',
-    label: 'KPI Groups',
-    icon: <CategoryIcon />,
-    description: 'Group reports by KPI',
-  },
-  {
-    path: '/duplicates',
-    label: 'Duplicate Reports',
-    icon: <FileCopyIcon />,
-    description: 'Find duplicate reports',
-  },
-  {
-    path: '/migration',
-    label: 'Power BI Migration',
-    icon: <RocketLaunchIcon />,
-    description: 'Migrate to Power BI',
-  },
+  { path: '/extraction',    label: 'SAP BO Extraction',  icon: <CloudDownloadIcon fontSize="small" /> },
+  { path: '/stale-reports', label: 'Stale Reports',       icon: <ReportProblemIcon fontSize="small" /> },
+  { path: '/kpi-groups',    label: 'KPI Groups',          icon: <CategoryIcon fontSize="small" /> },
+  { path: '/duplicates',    label: 'Duplicate Reports',   icon: <FileCopyIcon fontSize="small" /> },
+  { path: '/migration',     label: 'Power BI Migration',  icon: <RocketLaunchIcon fontSize="small" /> },
 ];
 
 const Sidebar = ({ collapsed, onToggle }) => {
@@ -66,14 +41,13 @@ const Sidebar = ({ collapsed, onToggle }) => {
           boxSizing: 'border-box',
           transition: 'width 0.2s ease',
           overflowX: 'hidden',
-          bgcolor: '#0D1B2A',
-          color: '#FFFFFF',
-          borderRight: 'none',
-          boxShadow: '4px 0 20px rgba(0,0,0,0.15)',
+          bgcolor: '#FFFFFF',
+          borderRight: '1px solid #E5E7EB',
+          boxShadow: 'none',
         },
       }}
     >
-      {/* Logo / App title */}
+      {/* ── Logo / App title ── */}
       <Box
         sx={{
           height: 64,
@@ -81,45 +55,104 @@ const Sidebar = ({ collapsed, onToggle }) => {
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
           px: collapsed ? 0 : 2,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: '1px solid #F3F4F6',
         }}
       >
         {!collapsed && (
-          <Box display="flex" alignItems="center" gap={1}>
-            <BarChartIcon sx={{ color: '#29B6F6', fontSize: 26 }} />
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #4F6CF7 0%, #818CF8 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <BarChartIcon sx={{ color: '#FFFFFF', fontSize: 18 }} />
+            </Box>
             <Box>
-              <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#FFFFFF', lineHeight: 1.2 }}>
+              <Typography
+                sx={{
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  color: '#111827',
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 ReportConversion
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem' }}>
+              <Typography
+                sx={{ fontSize: '0.7rem', color: '#9CA3AF', lineHeight: 1.2 }}
+              >
                 SAP BO → Power BI
               </Typography>
             </Box>
           </Box>
         )}
-        {collapsed && <BarChartIcon sx={{ color: '#29B6F6', fontSize: 26 }} />}
+
+        {collapsed && (
+          <Box
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #4F6CF7 0%, #818CF8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <BarChartIcon sx={{ color: '#FFFFFF', fontSize: 18 }} />
+          </Box>
+        )}
+
         {!collapsed && (
-          <IconButton size="small" onClick={onToggle} sx={{ color: 'rgba(255,255,255,0.5)' }}>
-            <ChevronLeftIcon />
+          <IconButton size="small" onClick={onToggle} sx={{ color: '#9CA3AF', '&:hover': { color: '#4F6CF7', bgcolor: '#EEF2FF' } }}>
+            <ChevronLeftIcon fontSize="small" />
           </IconButton>
         )}
       </Box>
 
-      {/* Collapse toggle when mini */}
+      {/* ── Expand toggle when mini ── */}
       {collapsed && (
-        <Box display="flex" justifyContent="center" pt={1} pb={0.5}>
-          <IconButton size="small" onClick={onToggle} sx={{ color: 'rgba(255,255,255,0.5)' }}>
-            <MenuIcon />
+        <Box display="flex" justifyContent="center" pt={1.5}>
+          <IconButton
+            size="small"
+            onClick={onToggle}
+            sx={{ color: '#9CA3AF', '&:hover': { color: '#4F6CF7', bgcolor: '#EEF2FF' } }}
+          >
+            <MenuIcon fontSize="small" />
           </IconButton>
         </Box>
       )}
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 1 }} />
+      {/* ── Section label ── */}
+      {!collapsed && (
+        <Box px={2} pt={2.5} pb={0.5}>
+          <Typography
+            sx={{
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              color: '#9CA3AF',
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px',
+            }}
+          >
+            Navigation
+          </Typography>
+        </Box>
+      )}
 
-      {/* Navigation items */}
-      <List sx={{ px: collapsed ? 0.5 : 1.5 }} disablePadding>
+      {/* ── Nav items ── */}
+      <List sx={{ px: collapsed ? 0.75 : 1.5, pt: 0.5 }} disablePadding>
         {NAV_ITEMS.map((item) => {
-          const isActive = location.pathname === item.path ||
+          const isActive =
+            location.pathname === item.path ||
             (item.path !== '/' && location.pathname.startsWith(item.path));
 
           const btn = (
@@ -128,22 +161,22 @@ const Sidebar = ({ collapsed, onToggle }) => {
               onClick={() => navigate(item.path)}
               sx={{
                 borderRadius: 2,
-                mb: 0.5,
-                py: 1.2,
-                px: collapsed ? 1 : 1.5,
+                mb: 0.25,
+                py: 1,
+                px: collapsed ? 1.25 : 1.25,
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                bgcolor: isActive ? 'rgba(41,182,246,0.15)' : 'transparent',
-                borderLeft: isActive ? '3px solid #29B6F6' : '3px solid transparent',
+                minHeight: 40,
+                bgcolor: isActive ? '#EEF2FF' : 'transparent',
                 '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.06)',
+                  bgcolor: isActive ? '#EEF2FF' : '#F9FAFB',
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: isActive ? '#29B6F6' : 'rgba(255,255,255,0.55)',
-                  minWidth: collapsed ? 0 : 36,
-                  mr: collapsed ? 0 : 0,
+                  color: isActive ? '#4F6CF7' : '#9CA3AF',
+                  minWidth: collapsed ? 0 : 32,
+                  '& svg': { fontSize: '1.1rem' },
                 }}
               >
                 {item.icon}
@@ -152,9 +185,10 @@ const Sidebar = ({ collapsed, onToggle }) => {
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontSize: '0.85rem',
+                    fontSize: '0.875rem',
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
+                    color: isActive ? '#4F6CF7' : '#374151',
+                    whiteSpace: 'nowrap',
                   }}
                 />
               )}
@@ -171,12 +205,14 @@ const Sidebar = ({ collapsed, onToggle }) => {
         })}
       </List>
 
-      {/* Bottom spacer */}
+      {/* ── Spacer ── */}
       <Box sx={{ flexGrow: 1 }} />
+
+      {/* ── Footer ── */}
       {!collapsed && (
-        <Box sx={{ p: 2, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem' }}>
-            ReportConversion v1.0.0
+        <Box sx={{ p: 2, borderTop: '1px solid #F3F4F6' }}>
+          <Typography sx={{ fontSize: '0.7rem', color: '#D1D5DB' }}>
+            v1.0.0
           </Typography>
         </Box>
       )}

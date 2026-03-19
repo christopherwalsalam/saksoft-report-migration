@@ -1,21 +1,19 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-  AppBar, Toolbar, Typography, Box, Breadcrumbs, Link,
-} from '@mui/material';
+import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const ROUTE_META = {
-  '/extraction':    { title: 'SAP BO Extraction',    breadcrumbs: ['Migration Pipeline', 'SAP BO Extraction'] },
-  '/stale-reports': { title: 'Stale Reports',         breadcrumbs: ['Migration Pipeline', 'Stale Reports'] },
-  '/kpi-groups':    { title: 'KPI Groups',            breadcrumbs: ['Migration Pipeline', 'KPI Groups'] },
-  '/duplicates':    { title: 'Duplicate Reports',     breadcrumbs: ['Migration Pipeline', 'Duplicate Reports'] },
-  '/migration':     { title: 'Power BI Migration',    breadcrumbs: ['Migration Pipeline', 'Power BI Migration'] },
+  '/extraction':    { title: 'SAP BO Extraction',   subtitle: 'Extract and review report metadata from SAP BusinessObjects.' },
+  '/stale-reports': { title: 'Stale Reports',        subtitle: 'Identify reports that are unused or have not been accessed recently.' },
+  '/kpi-groups':    { title: 'KPI Groups',           subtitle: 'Classify reports into KPI domains using AI-powered SQL analysis.' },
+  '/duplicates':    { title: 'Duplicate Reports',    subtitle: 'Detect structurally similar or identical reports across the catalogue.' },
+  '/migration':     { title: 'Power BI Migration',   subtitle: 'Generate and upload Power BI report files to Azure.' },
 };
 
-const Header = ({ sidebarWidth }) => {
+const Header = () => {
   const location = useLocation();
-  const meta = ROUTE_META[location.pathname] || { title: 'Dashboard', breadcrumbs: [] };
+  const meta = ROUTE_META[location.pathname] || { title: 'Dashboard', subtitle: '' };
 
   return (
     <AppBar
@@ -24,33 +22,34 @@ const Header = ({ sidebarWidth }) => {
       sx={{
         zIndex: (theme) => theme.zIndex.drawer - 1,
         bgcolor: '#FFFFFF',
-        borderBottom: '1px solid #E0E0E0',
+        borderBottom: '1px solid #E5E7EB',
         left: 0,
         width: '100%',
       }}
     >
       <Toolbar sx={{ minHeight: '64px !important', px: 3 }}>
         <Box>
-          <Typography variant="h6" fontWeight={700} color="text.primary" lineHeight={1.2}>
+          <Typography
+            sx={{
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              color: '#111827',
+              lineHeight: 1.3,
+            }}
+          >
             {meta.title}
           </Typography>
-          {meta.breadcrumbs.length > 0 && (
-            <Breadcrumbs
-              separator={<NavigateNextIcon fontSize="small" />}
-              aria-label="breadcrumb"
-              sx={{ '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}
+          {meta.subtitle && (
+            <Typography
+              sx={{
+                fontSize: '0.8125rem',
+                color: '#9CA3AF',
+                fontWeight: 400,
+                lineHeight: 1.4,
+              }}
             >
-              {meta.breadcrumbs.map((crumb, idx) => (
-                <Typography
-                  key={idx}
-                  variant="caption"
-                  color={idx === meta.breadcrumbs.length - 1 ? 'primary.main' : 'text.secondary'}
-                  fontWeight={idx === meta.breadcrumbs.length - 1 ? 600 : 400}
-                >
-                  {crumb}
-                </Typography>
-              ))}
-            </Breadcrumbs>
+              {meta.subtitle}
+            </Typography>
           )}
         </Box>
       </Toolbar>
