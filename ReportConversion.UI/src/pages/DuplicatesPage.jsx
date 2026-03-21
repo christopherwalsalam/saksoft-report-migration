@@ -4,6 +4,7 @@ import {
   Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Pagination, Chip, CircularProgress, Alert, Stack, Divider,
   Accordion, AccordionSummary, AccordionDetails, InputAdornment,
+  Select, MenuItem, FormControl, InputLabel,
 } from '@mui/material';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import SearchIcon from '@mui/icons-material/Search';
@@ -21,8 +22,8 @@ const DuplicatesPage = () => {
   const { setTaskStarted, clearTask } = useTaskStore();
   const task = useTaskPolling('duplicates');
 
-  const [filters, setFilters] = useState({ search: '', minSimilarity: '', groupId: '' });
-  const [activeFilters, setActiveFilters] = useState({ search: '', minSimilarity: '', groupId: '' });
+  const [filters, setFilters] = useState({ search: '', minSimilarity: '', detectionMethod: '' });
+  const [activeFilters, setActiveFilters] = useState({ search: '', minSimilarity: '', detectionMethod: '' });
   const [page, setPage] = useState(1);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -38,12 +39,12 @@ const DuplicatesPage = () => {
   });
 
   const { data: dupData, isLoading, isError } = useQuery({
-    queryKey: ['duplicates', activeFilters, page],
+    queryKey: ['duplicates', activeFilters.search, activeFilters.minSimilarity, activeFilters.detectionMethod, page],
     queryFn: () =>
       getDuplicates({
         search: activeFilters.search || undefined,
         minSimilarity: activeFilters.minSimilarity ? Number(activeFilters.minSimilarity) / 100 : undefined,
-        groupId: activeFilters.groupId || undefined,
+        detectionMethod: activeFilters.detectionMethod || undefined,
         page,
         pageSize: 20,
       }),
@@ -58,7 +59,7 @@ const DuplicatesPage = () => {
 
   const handleSearch = () => { setActiveFilters({ ...filters }); setPage(1); };
   const handleClear = () => {
-    const empty = { search: '', minSimilarity: '', groupId: '' };
+    const empty = { search: '', minSimilarity: '', detectionMethod: '' };
     setFilters(empty); setActiveFilters(empty); setPage(1);
   };
 
@@ -133,11 +134,19 @@ const DuplicatesPage = () => {
               />
             </Grid>
             <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth label="Duplicate Group ID"
-                value={filters.groupId}
-                onChange={(e) => setFilters((f) => ({ ...f, groupId: e.target.value }))}
-              />
+              <FormControl fullWidth>
+                <InputLabel>Detection Method</InputLabel>
+                <Select
+                  label="Detection Method"
+                  value={filters.detectionMethod}
+                  onChange={(e) => setFilters((f) => ({ ...f, detectionMethod: e.target.value }))}
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="MetadataEmbedding">Metadata Embedding</MenuItem>
+                  <MenuItem value="SqlFingerprint">Sql Fingerprint</MenuItem>
+                  <MenuItem value="SqlEmbedding">Sql Embedding</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={2} display="flex" gap={1}>
               <Button variant="contained" startIcon={<SearchIcon />} onClick={handleSearch} fullWidth>

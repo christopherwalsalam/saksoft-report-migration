@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ReportConversion.Application.Interfaces;
 using ReportConversion.Application.Models;
 using ReportConversion.Application.Services;
+using ReportConversion.Domain.Enums;
 
 namespace ReportConversion.API.Controllers;
 
@@ -57,7 +58,7 @@ public class DuplicatesController : ControllerBase
     public async Task<IActionResult> GetDuplicates(
         [FromQuery] string? search = null,
         [FromQuery] double? minSimilarity = null,
-        [FromQuery] string? groupId = null,
+        [FromQuery] string? detectionMethod = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -72,8 +73,9 @@ public class DuplicatesController : ControllerBase
             filtered = filtered.Where(d =>
                 (d.Report1 != null && d.Report1.Name.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                 (d.Report2 != null && d.Report2.Name.Contains(search, StringComparison.OrdinalIgnoreCase)));
-        if (!string.IsNullOrWhiteSpace(groupId) && int.TryParse(groupId, out var gid))
-            filtered = filtered.Where(d => d.Id == gid || d.ReportId1 == gid || d.ReportId2 == gid);
+        if (!string.IsNullOrWhiteSpace(detectionMethod) &&
+            Enum.TryParse<DetectionMethod>(detectionMethod, ignoreCase: true, out var method))
+            filtered = filtered.Where(d => d.DetectionMethod == method);
 
         var filteredList = filtered.ToList();
         var total = filteredList.Count;

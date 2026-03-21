@@ -13,11 +13,11 @@ export const startDuplicateDetection = async () => {
  * GET /api/duplicates
  * Returns paginated list of duplicate report pairs/groups
  */
-export const getDuplicates = async ({ search, minSimilarity, groupId, page = 1, pageSize = 20 } = {}) => {
+export const getDuplicates = async ({ search, minSimilarity, detectionMethod, page = 1, pageSize = 20 } = {}) => {
   const params = { page, pageSize };
   if (search) params.search = search;
   if (minSimilarity != null) params.minSimilarity = minSimilarity;
-  if (groupId) params.groupId = groupId;
+  if (detectionMethod) params.detectionMethod = detectionMethod;
   const { data } = await axiosInstance.get('/api/duplicates/getduplicates', { params });
   return data;
 };
