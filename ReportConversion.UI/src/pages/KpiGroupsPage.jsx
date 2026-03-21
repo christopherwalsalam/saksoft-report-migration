@@ -3,7 +3,7 @@ import {
   Box, Button, Card, CardContent, Typography, TextField,
   Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Pagination, Chip, CircularProgress, Alert, Stack, Divider,
-  Accordion, AccordionSummary, AccordionDetails, Badge,
+  Accordion, AccordionSummary, AccordionDetails, Badge, Tooltip,
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import SearchIcon from '@mui/icons-material/Search';
@@ -181,8 +181,22 @@ const KpiGroupsPage = () => {
                             <Typography variant="body2" fontWeight={600}>{g.name || g.groupName}</Typography>
                           </Box>
                         </TableCell>
-                        <TableCell>
-                          <Chip label={g.kpiLabel || g.label || '—'} size="small" color="secondary" variant="outlined" />
+                        <TableCell sx={{ maxWidth: 220 }}>
+                          {(() => {
+                            const full = g.kpiLabel || g.label || '—';
+                            const truncated = full.length > 35 ? `${full.slice(0, 35)}…` : full;
+                            return (
+                              <Tooltip title={full.length > 35 ? full : ''} placement="top" arrow>
+                                <Chip
+                                  label={truncated}
+                                  size="small"
+                                  color="secondary"
+                                  variant="outlined"
+                                  sx={{ maxWidth: '100%', '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+                                />
+                              </Tooltip>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -218,14 +232,17 @@ const KpiGroupsPage = () => {
         error={null}
       >
         {!reportsLoading && (
-          <KpiGroupReportList reports={groupReports || []} />
+          <KpiGroupReportList
+            reports={groupReports || []}
+            kpiLabel={selectedGroup?.kpiLabel || selectedGroup?.label}
+          />
         )}
       </DetailPanel>
     </Box>
   );
 };
 
-const KpiGroupReportList = ({ reports }) => {
+const KpiGroupReportList = ({ reports, kpiLabel }) => {
   if (!reports || reports.length === 0) {
     return (
       <Box textAlign="center" py={4}>
@@ -236,6 +253,16 @@ const KpiGroupReportList = ({ reports }) => {
 
   return (
     <Box>
+      {kpiLabel && (
+        <Box sx={{ mb: 2, p: 1.5, bgcolor: '#F5F3FF', borderRadius: 2, border: '1px solid #DDD6FE' }}>
+          <Typography variant="caption" fontWeight={700} color="secondary.main" display="block" mb={0.5}>
+            KPI LABEL
+          </Typography>
+          <Typography variant="body2" color="text.primary" sx={{ wordBreak: 'break-word' }}>
+            {kpiLabel}
+          </Typography>
+        </Box>
+      )}
       <Typography variant="subtitle2" fontWeight={700} mb={2} color="text.secondary">
         {reports.length} REPORT{reports.length !== 1 ? 'S' : ''} IN THIS GROUP
       </Typography>
