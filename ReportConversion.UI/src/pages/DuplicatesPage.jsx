@@ -24,6 +24,7 @@ const DuplicatesPage = () => {
 
   const [filters, setFilters] = useState({ search: '', minSimilarity: '', detectionMethod: '' });
   const [activeFilters, setActiveFilters] = useState({ search: '', minSimilarity: '', detectionMethod: '' });
+  const [appliedSimilarityScore, setAppliedSimilarityScore] = useState(null);
   const [page, setPage] = useState(1);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -52,15 +53,19 @@ const DuplicatesPage = () => {
   });
 
   const { data: groupReports, isLoading: reportsLoading } = useQuery({
-    queryKey: ['duplicate-group-reports', selectedGroupId],
-    queryFn: () => getDuplicateGroupReports(selectedGroupId),
+    queryKey: ['duplicate-group-reports', selectedGroupId, appliedSimilarityScore],
+    queryFn: () => getDuplicateGroupReports(selectedGroupId, appliedSimilarityScore),
     enabled: !!selectedGroupId && panelOpen,
   });
 
-  const handleSearch = () => { setActiveFilters({ ...filters }); setPage(1); };
+  const handleSearch = () => {
+    setActiveFilters({ ...filters });
+    setAppliedSimilarityScore(filters.minSimilarity ? Number(filters.minSimilarity) / 100 : null);
+    setPage(1);
+  };
   const handleClear = () => {
     const empty = { search: '', minSimilarity: '', detectionMethod: '' };
-    setFilters(empty); setActiveFilters(empty); setPage(1);
+    setFilters(empty); setActiveFilters(empty); setAppliedSimilarityScore(null); setPage(1);
   };
 
   const handleRowClick = (groupId) => {

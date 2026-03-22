@@ -112,9 +112,10 @@ public class DuplicatesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDuplicateGroupReports(
         int groupId,
+        [FromQuery] double? similarityScore,
         [FromServices] IReportSqlRepository sqlRepository)
     {
-        var all = await _duplicateRepository.GetAllAsync(null);
+        var all = await _duplicateRepository.GetAllAsync(similarityScore);
         var groupPairs = all.Where(d => d.Id == groupId).ToList();
 
         if (!groupPairs.Any())

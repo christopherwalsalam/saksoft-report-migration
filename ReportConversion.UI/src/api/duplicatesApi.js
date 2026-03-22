@@ -24,9 +24,13 @@ export const getDuplicates = async ({ search, minSimilarity, detectionMethod, pa
 
 /**
  * GET /api/duplicates/getduplicategroupreports/{groupId}
- * Returns all reports in a duplicate group with full detail
+ * Returns all reports in a duplicate group with full detail.
+ * @param {number} groupId
+ * @param {number|undefined} similarityScore - optional minimum similarity score (0–1)
  */
-export const getDuplicateGroupReports = async (groupId) => {
-  const { data } = await axiosInstance.get(`/api/duplicates/getduplicategroupreports/${groupId}`);
+export const getDuplicateGroupReports = async (groupId, similarityScore) => {
+  const params = {};
+  if (similarityScore != null) params.similarityScore = similarityScore;
+  const { data } = await axiosInstance.get(`/api/duplicates/getduplicategroupreports/${groupId}`, { params });
   return data.data ?? data;
 };
